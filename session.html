@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maters</title>
+  <meta property="og:title" content="Rejoins ma session sur Maters">
+  <meta property="og:description" content="Move. Mates. It Matters.">
+  <meta name="robots" content="noindex">
+  <style>
+    html, body { margin: 0; height: 100%; background: #FBEDE3; }
+  </style>
+</head>
+<body>
+  <script>
+    (function () {
+      var STORE = 'https://apps.apple.com/fr/app/maters/id6768300932';
+      var id = new URLSearchParams(window.location.search).get('id');
+
+      // Lien mal formé (pas d'ID, ou ID suspect) : direction l'App Store sans attendre
+      if (!id || !/^[A-Za-z0-9-]+$/.test(id)) {
+        window.location.replace(STORE);
+        return;
+      }
+
+      var opened = false;       // l'app s'est ouverte (la page est passée en arrière-plan)
+      var promptShown = false;  // Safari affiche "Ouvrir dans Maters ?"
+
+      function goStore() {
+        if (!opened && !document.hidden) window.location.replace(STORE);
+      }
+
+      // Aucun signe de vie après 2,5 s (ni message, ni ouverture) : l'app n'est pas installée
+      var fallback = setTimeout(function () {
+        if (!promptShown) goStore();
+      }, 2500);
+
+      // L'app s'ouvre : la page passe en arrière-plan, on annule tout
+      function markOpened() { opened = true; clearTimeout(fallback); }
+      document.addEventListener('visibilitychange', function () { if (document.hidden) markOpened(); });
+      window.addEventListener('pagehide', markOpened);
+
+      // Le message de Safari fait perdre le focus à la page : on attend la réponse
+      window.addEventListener('blur', function () {
+        promptShown = true;
+        clearTimeout(fallback);
+      });
+
+      // Le focus revient sans que l'app se soit ouverte : l'utilisateur a refusé
+      window.addEventListener('focus', function () {
+        if (promptShown && !opened) setTimeout(goStore, 700);
+      });
+
+      // Tentative d'ouverture directe de la session dans l'app
+      window.location.href = 'maters://session/' + encodeURIComponent(id);
+    })();
+  </script>
+</body>
+</html>
